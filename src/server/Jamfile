@@ -1,0 +1,11 @@
+SubDir TOP src server ;
+
+SRCS =
+	server
+	jmp
+	;
+
+BIN_NAME = server ;
+
+Main $(BIN_NAME) : $(SRCS).c ;
+

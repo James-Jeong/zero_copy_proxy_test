@@ -1,0 +1,17 @@
+SubDir TOP src proxy ;
+
+SRCS =
+	proxy
+	pipe
+	transc
+	jpool
+	dlist_int
+	dlist_ptr
+	;
+
+BIN_NAME = proxy ;
+BIN_LIBS = -lpthread ;
+
+Main $(BIN_NAME) : $(SRCS).c ;
+LINKLIBS on $(BIN_NAME) = $(BIN_LIBS) ;
+
