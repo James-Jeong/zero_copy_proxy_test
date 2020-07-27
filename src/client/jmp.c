@@ -56,9 +56,6 @@ char* jmp_get_data( jmp_t* msg){
 int jmp_set_msg( jmp_t *msg, uint8_t version, char *data, uint32_t code){
 	if( data != NULL){
 		int len = strlen( data);
-		memset( msg->data, 0, DATA_MAX_LEN);
-		data[ len] = '\0';
-		memcpy( msg->data, data, len);
 
 		msg->hdr.version = version;
 		msg->hdr.length = len + sizeof( msg->hdr);
@@ -68,6 +65,9 @@ int jmp_set_msg( jmp_t *msg, uint8_t version, char *data, uint32_t code){
 		msg->hdr.hop_id = 0;
 		msg->hdr.end_id = 0;
 
+		memset( msg->data, 0, DATA_MAX_LEN);
+		data[ len] = '\0';
+		memcpy( msg->data, data, len);
 		return 1;
 	}
 	return -1;

@@ -13,7 +13,7 @@
 typedef unsigned char byte;
 
 /// @struct transc_t
-/// @brief proxy 에서 thread 별 user transcfer 관리를 위한 구조체
+/// @brief proxy 에서 thread 별 user buffer 관리를 위한 구조체
 typedef struct transc_s transc_t;
 struct transc_s{
 	/// 메시지 헤더 수신 여부
@@ -39,7 +39,7 @@ struct transc_s{
 };
 
 void transc_clear_data( transc_t *transc);
-uint64_t transc_get_msg_length( transc_t *transc);
+uint64_t transc_get_msg_length( transc_t *transc, int endian);
 
 #endif
 

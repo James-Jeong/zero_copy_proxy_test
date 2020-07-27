@@ -27,7 +27,7 @@ void transc_clear_data( transc_t *transc){
  * @return 메시지 길이
  * @param transc 메시지의 길이를 구하기 위한 transc_t 구조체 변수
  */
-uint64_t transc_get_msg_length( transc_t *transc){
+uint64_t transc_get_msg_length( transc_t *transc, int endian){
 	if( ( strlen( transc->read_hdr_buf) == 0)){
 		return -1;
 	}
@@ -36,20 +36,25 @@ uint64_t transc_get_msg_length( transc_t *transc){
 	// len size = 3 bytes
 	uint8_t *data = ( uint8_t*)( transc->read_hdr_buf);
 
+//	int i;
+//	for( i = 0; i < 20; i++){
+//		printf("%d = %d\n", i, ( uint8_t)data[i]); 
+//	}	
+
 	// Big endian
-	uint32_t msg_len_b = ( ( ( int)( data[ 1])) << 16) + ( ( ( int)( data[ 2])) << 8) + data[ 3];
+	if( endian == 1){
+		uint32_t msg_len_b = ( ( ( int)( data[ 1])) << 16) + ( ( ( int)( data[ 2])) << 8) + data[ 3];
+		//printf("msg_len_b : %d\n", msg_len_b);
+		return msg_len_b;
+	}
 
 	// Little endian
-	//uint32_t msg_len_l = ( ( ( int)( data[ 3])) << 16) + ( ( ( int)( data[ 2])) << 8) + data[ 1];
+	if( endian == 0){
+		uint32_t msg_len_l = ( ( ( int)( data[ 3])) << 16) + ( ( ( int)( data[ 2])) << 8) + data[ 1];
+		//printf("msg_len_l : %d\n", msg_len_l);
+		return msg_len_l;
+	}
 
-	//printf("msg_len_b : %d\n", msg_len_b);
-	//printf("msg_len_l : %d\n", msg_len_l); 
-
-	//int i;
-	//for( i = 0; i < 20; i++){
-	//	printf("%d = %d\n", i, ( uint8_t)data[i]); 
-	//}	
-
-	return msg_len_b;
+	return -1;
 }
 

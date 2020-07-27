@@ -9,29 +9,54 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/epoll.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <signal.h>
+#include <pthread.h>
+#include <netdb.h>
+#include <unistd.h>
 
-#include "jmp.h"
+#include "common.h"
 
-#define HDR_MAX_LEN 20
+#define MSG_HEADER_LEN 20
 #define BUF_MAX_LEN 1024
 #define MSG_QUEUE_NUM 10
 #define SERVER_PORT 8000
+#define TIMEOUT 10000
 
-#define SPLICE_F_MOVE 0x01
-#define SPLICE_F_NONBLOCK 0x02
+//#define SPLICE_F_MOVE 0x01
+//#define SPLICE_F_NONBLOCK 0x02
 
 
-/// @struct buf_t
-/// @brief client 의 요청을 담기위한 버퍼 구조체
-typedef struct buf_s buf_t;
-struct buf_s{
-	/// 버퍼 데이터
-	char *data;
-	/// 버퍼 수신 바이트
-	int bytes;
+/// @struct transc_t
+/// @brief server 에서 user buffer 관리를 위한 구조체
+typedef struct transc_s transc_t;
+struct transc_s{
+	/// 메시지 헤더 수신 여부
+	int is_recv_header;
+	/// 메시지 바디 수신 여부
+	int is_recv_body;
+	/// 메시지 헤더 송신 여부
+	int is_send_header;
+	/// 메시지 헤더 송신 여부
+	int is_send_body;
+	/// 전달 받은 메시지 length
+	int length;
+	/// 전달 받은 메시지의 바이트
+	int recv_bytes;
+	/// 보낸 메시지의 바이트
+	int send_bytes;
+	/// 전달 받은 메시지 헤더 데이터
+	char read_hdr_buf[ MSG_HEADER_LEN];
+	/// 전달 받은 메시지 바디 데이터
+	char read_body_buf[ BUF_MAX_LEN];
+	/// 보낸 메시지 헤더 데이터
+	char write_hdr_buf[ MSG_HEADER_LEN];
+	/// 보낸 메시지 바디 데이터
+	char write_body_buf[ BUF_MAX_LEN];
+	/// 사용자 정의 data
+	void *data;
 };
 
 /// @struct server_t
@@ -42,18 +67,16 @@ struct server_s{
 	int fd;
 	/// server socket address
 	struct sockaddr_in addr;
+	/// server epoll handle file descriptor
+	int epoll_handle_fd;
+	/// server epoll event management structure
+	struct epoll_event events[ BUF_MAX_LEN];
 };
 
 
 server_t* server_init();
 void server_destroy( server_t *server);
-void server_conn( server_t *server);
-int server_process_data( server_t *server, int client_fd);
-bool server_recv_data( server_t *server, int client_fd, void *data);
-bool server_send_data( server_t *server, int client_fd, void *data);
-bool server_buf_data_init( buf_t *buffer);
-void server_buf_data_destroy( buf_t *buffer);
-void server_buf_clear( buf_t *buffer);
+int server_conn( server_t *server);
 
 #endif
 

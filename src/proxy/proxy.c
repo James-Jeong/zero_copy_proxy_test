@@ -41,7 +41,7 @@ static int proxy_set_fd_nonblock( int fd){
  * @fn static int proxy_check_fd( int fd)
  * @brief src file descriptor 가 연결되어 있는지 확인
  * @return 정상 연결되어 있으면 NORMAL, 비정상 연결이면 FD_ERR 반환
- * @param fd 확인할 src file descriptor
+ * @param fd 연결을 확인할 file descriptor
  */
 static int proxy_check_fd( int fd){
 	int error = 0;
@@ -60,7 +60,7 @@ static int proxy_check_fd( int fd){
  * @param _pipe zero copy 처리를 위한 pipe_t 객체
  * @param fd 연결된 src file descriptor
  */
-static int proxy_recv_data( transc_t *transc, pipe_t *_pipe, int fd){
+static int proxy_recv_data( transc_t *transc, pipe_t *_pipe, int fd, int endian){
 	if( fd < 0){
 		printf("        | ! Proxy : Fail to get src_fd in proxy_recv_data (fd:%d)\n", fd);
 		return FD_ERR;
@@ -106,7 +106,7 @@ static int proxy_recv_data( transc_t *transc, pipe_t *_pipe, int fd){
 
 			if( transc->recv_bytes == MSG_HEADER_LEN){
 				// If proxy recv Header all, then get message length
-				transc->length = transc_get_msg_length( transc);
+				transc->length = transc_get_msg_length( transc, endian);
 				body_len = transc->length - MSG_HEADER_LEN;
 				if( body_len <= 0){
 					printf("	| ! Proxy : msg body length is 0 (in recv msg header) (fd:%d)\n", fd);
@@ -164,7 +164,7 @@ static int proxy_recv_data( transc_t *transc, pipe_t *_pipe, int fd){
 	}
 
 	if( ( transc->is_recv_header == 1) && ( transc->is_recv_body == 1)){
-		//printf("        | @ Proxy : Recv the msg (bytes : %d) (fd : %d)\n", transc->recv_bytes, fd);
+		printf("        | @ Proxy : Recv the msg (bytes : %d) (fd : %d)\n", transc->recv_bytes, fd);
 	}
 
 	//printf("        | ! Proxy : Fail to recv the msg (fd : %d)\n", fd);
@@ -255,7 +255,7 @@ static int proxy_send_data( transc_t *transc, pipe_t *_pipe, int fd){
 	}
 
 	if( ( transc->is_send_header == 1) && ( transc->is_send_body == 1)){
-		//printf("        | @ Proxy : Send the msg (bytes : %d) (fd : %d)\n", transc->send_bytes, fd);
+		printf("        | @ Proxy : Send the msg (bytes : %d) (fd : %d)\n", transc->send_bytes, fd);
 	}
 
 	//printf("        | ! Proxy : Fail to send the msg (fd : %d)\n", fd);
@@ -270,6 +270,7 @@ static int proxy_send_data( transc_t *transc, pipe_t *_pipe, int fd){
  * @param event 발생한 event
  */
 static void proxy_process_data( int fd, void *data){
+	int endian;
 	int read_rv = NORMAL;
 	int send_rv = NORMAL;
 	int src_fd = ( int)( ( ( jpool_work_data_t*)( data))->src_fd);
@@ -282,11 +283,13 @@ static void proxy_process_data( int fd, void *data){
 	// fd 가 destination 이면 source 로 포워딩되로록 설정
 	// 파이프는 dst->src 용 파이프로 설정
 	if( fd == dst_fd){
+		endian = 0;
 		dst_fd = src_fd;
 		_pipe = ( pipe_t*)( ( ( jpool_work_data_t*)( data))->_pipe2);
 		transc = outgoing_transc;
 	}
 	else{
+		endian = 0;
 		_pipe = ( pipe_t*)( ( ( jpool_work_data_t*)( data))->_pipe1);
 		transc = ingoing_transc;
 	}
@@ -299,12 +302,12 @@ static void proxy_process_data( int fd, void *data){
 	// 4. 프록시에서 읽은 응답 메시지를 src 로 포워딩함
 
 	if( ( transc->is_recv_header == 0) || ( transc->is_recv_body == 0)){
-		read_rv = proxy_recv_data( transc, _pipe, fd);
+		read_rv = proxy_recv_data( transc, _pipe, fd, endian);
 		if( read_rv <= ZERO_BYTE){
-			if( fd == src_fd){
+//			if( fd == src_fd){
 				printf("	| ! Proxy : socket closed (fd:%d)\n\n", fd);
 				close( fd);
-			}
+//			}
 		}
 	}
 

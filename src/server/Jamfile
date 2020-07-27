@@ -2,10 +2,11 @@ SubDir TOP src server ;
 
 SRCS =
 	server
-	jmp
 	;
 
 BIN_NAME = server ;
+BIN_LIBS = -lpthread ;
 
 Main $(BIN_NAME) : $(SRCS).c ;
+LINKLIBS on $(BIN_NAME) = $(BIN_LIBS) ;
 
