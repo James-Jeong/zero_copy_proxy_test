@@ -438,8 +438,6 @@ static void* server_detect_finish( void *data){
 			is_error = true;
 			break;
 		}
-		
-		sleep( 1);
 	}
 }
 
@@ -638,7 +636,6 @@ int main( int argc, char **argv){
 	}
 
 	while( 1){
-		usleep( 100);
 		rv = server_conn( server);
 		if( rv <= FD_ERR){
 			if( rv == SOC_ERR){
@@ -656,7 +653,6 @@ int main( int argc, char **argv){
 			if( is_finish == true){
 				break;
 			}
-			sleep( 1);
 		}
 		server_destroy( server);
 	}
@@ -665,7 +661,6 @@ int main( int argc, char **argv){
 			if( is_error == true){
 				break;
 			}
-			sleep( 1);
 		}
 	}
 

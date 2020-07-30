@@ -364,7 +364,6 @@ static int proxy_wait( proxy_t *proxy){
 			if( proxy->jpool->working_cnt < THREAD_NUM){
 				break;
 			}
-			sleep( 1);
 		}
 	}
 
@@ -417,7 +416,6 @@ static int proxy_open_dst( proxy_t *proxy){
 	}
 
 	while( 1){
-		sleep( 1);
 		rv = connect( dst_fd, ( struct sockaddr*)( &dst_addr), addr_len);
 		if( rv == -1){
 			if( errno == EINPROGRESS){
@@ -645,8 +643,6 @@ static void* proxy_detect_finish( void *data){
 			is_error = true;
 			break;
 		}
-		
-		sleep( 1);
 	}
 }
 
@@ -839,7 +835,6 @@ int main( int argc, char **argv){
 			if( is_finish == true){
 				break;
 			}
-			sleep( 1);
 		}
 		proxy_destroy( proxy);
 	}
@@ -848,7 +843,6 @@ int main( int argc, char **argv){
 			if( is_error == true){
 				break;
 			}
-			sleep( 1);
 		}
 	}
 }

@@ -39,8 +39,6 @@ static void* client_detect_finish( void *data){
 			is_error = true;
 			break;
 		}
-		
-		sleep( 1);
 	}
 }
 
@@ -223,7 +221,6 @@ int main( int argc, char **argv){
 			if( is_finish == true){
 				break;
 			}
-			sleep( 1);
 		}
 		client_destroy( client);
 	}
@@ -232,7 +229,6 @@ int main( int argc, char **argv){
 			if( is_error == true){
 				break;
 			}
-			sleep( 1);
 		}
 	}
 }
