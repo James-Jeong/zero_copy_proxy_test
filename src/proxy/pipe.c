@@ -1,4 +1,4 @@
-#include "pipe.h"
+#include "local/pipe_l.h"
 
 int pipe_open( pipe_t *_pipe){
 	if( pipe(_pipe->fd) < 0){

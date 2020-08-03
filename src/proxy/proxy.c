@@ -1,18 +1,30 @@
-#include "proxy.h"
+#include "local/proxy_l.h"
 
-static int is_finish = false;
-static int is_error = false;
+///////////////////////////////////////////////////////////////////
+// STATIC Function for proxy_t
+///////////////////////////////////////////////////////////////////
+static proxy_t* proxy_instance(){
+	static proxy_t _singleton;
 
-// -----------------------------------------
+	return &_singleton;
+}
 
-static void proxy_signal_handler( int sig){
-	printf("	| ! Proxy : proxy will be finished (sig:%d)\n", sig);
-	is_finish = true;
+static void _proxy_exit_program( int sig){
+	proxy_t *proxy = proxy_instance();
+
+	printf("    | @ Proxy : (fd:%d)\n", proxy->fd);
+	printf("    | @ Proxy : (dst fd:%d)\n", proxy->dst_fd);
+	printf("    | @ Proxy : (local ip:%s)\n", proxy->local_ip);
+	printf("    | @ Proxy : (local port:%d)\n", proxy->local_port);
+	printf("    | ! Proxy : proxy will be finished (sig:%d)\n", sig);
+
+	proxy_final( proxy);
+
 	signal( sig, SIG_DFL);
 }
 
 static void proxy_set_signal( int sig_type){
-	signal( sig_type, proxy_signal_handler);
+	signal( sig_type, _proxy_exit_program);
 }
 
 /**
@@ -304,10 +316,10 @@ static void proxy_process_data( int fd, void *data){
 	if( ( transc->is_recv_header == 0) || ( transc->is_recv_body == 0)){
 		read_rv = proxy_recv_data( transc, _pipe, fd, endian);
 		if( read_rv <= ZERO_BYTE){
-//			if( fd == src_fd){
-				printf("	| ! Proxy : socket closed (fd:%d)\n\n", fd);
-				close( fd);
-//			}
+			//			if( fd == src_fd){
+			printf("	| ! Proxy : socket closed (fd:%d)\n\n", fd);
+			close( fd);
+			//			}
 		}
 	}
 
@@ -515,7 +527,7 @@ static int proxy_delete_src_info( proxy_t *proxy, int src_fd){
 		return NOT_EXIST;
 	}
 
-//	jpool_destroy_work_data( work_data);
+	//	jpool_destroy_work_data( work_data);
 	printf("\n");
 	return NORMAL;
 }
@@ -619,75 +631,38 @@ static int proxy_add_work_data( proxy_t *proxy){
 	return NORMAL;
 }
 
-/**
- * @fn static void* proxy_detect_finish( void *data)
- * @brief Proxy 에서 사용하는 메모리를 해제하기 위한 함수
- * @return None
- * @param data Thread 매개변수, 현재 사용되는(할당된) Proxy 객체
- */
-static void* proxy_detect_finish( void *data){
-	proxy_t *proxy = ( proxy_t*)( data);
-
-	while( 1){
-		//if( proxy_check_fd( proxy->dst_fd) == FD_ERR){
-		//	proxy_destroy( proxy);
-		//	break;
-		//}
-
-		if( is_error == true){
-			break;
-		}
-
-		if( is_finish == true){
-			proxy_destroy( proxy);
-			is_error = true;
-			break;
-		}
-	}
-}
+///////////////////////////////////////////////////////////////////
+// LOCAL Function for proxy_t
+///////////////////////////////////////////////////////////////////
 
 /**
- * @fn static int proxy_handle_finish( proxy_t *proxy)
- * @brief Proxy 가 종료되기 위해 종료 여부를 확인하는 Thread 구동하기 위한 함수
- * @return Thread 생성 시 오류 발생 여부 반환
- * @param proxy 현재 사용되는(할당된) Proxy 객체
- */
-static int proxy_handle_finish( proxy_t *proxy){
-	pthread_t thread;
-
-	if( ( pthread_create( &thread, NULL, proxy_detect_finish, proxy)) != 0){
-		printf("	| ! Proxy : Fail to create a thread for detecting is_finish var\n");
-		return PTHREAD_ERR;
-	}
-
-	if( ( pthread_detach( thread)) != 0){
-		printf("	| ! Proxy : Fail to detach the thread for detecting is_finish var\n");
-		return PTHREAD_ERR;
-	}
-
-	return NORMAL;
-}
-
-// -----------------------------------------
-
-/**
- * @fn proxy_t* proxy_init()
- * @brief Proxy 객체를 생성하고 초기화하는 함수
+ * @fn proxy_t* proxy_create( char **argv)
+ * @brief Proxy 객체를 생성하는 함수
  * @return 생성된 Proxy 객체
  */
-proxy_t* proxy_init( char **argv){
-	proxy_t *proxy = ( proxy_t*)malloc( sizeof( proxy_t));
+proxy_t* proxy_create( char **argv){
+//  proxy_t *proxy = ( proxy_t*)malloc( sizeof( proxy_t));
+//  if ( proxy == NULL){
+//      printf("    | ! Proxy : Fail to allocate memory\n");
+//      return NULL;
+//  }
 
-	if ( proxy == NULL){
-		printf("	| ! Proxy : Fail to allocate memory\n");
-		return NULL;
-	}
+    int rv;
+    proxy_t *proxy = proxy_instance();
+    rv = proxy_init( proxy, argv);
+    if( rv){
+        printf("    | ! Proxy : Fail to create proxy object\n");
+        return NULL;
+    }
+}
 
+/**
+ * @fn int proxy_init( proxy_t *proxy, char **argv)
+ * @brief Proxy 객체를 생성하고 초기화하는 함수
+ * @return 초기화 성공 여부
+ */
+int proxy_init( proxy_t *proxy, char **argv){
 	proxy_set_signal( SIGINT);
-	if( ( proxy_handle_finish( proxy)) == PTHREAD_ERR){
-		free( proxy);
-		return NULL;
-	}
 
 	proxy->local_ip = strdup( argv[1]);
 	proxy->local_port = atoi( argv[2]);
@@ -700,19 +675,19 @@ proxy_t* proxy_init( char **argv){
 	int rv = proxy_set_sock( proxy);
 	if( rv == FD_ERR){
 		free( proxy);
-		return NULL;
+		return FD_ERR;
 	}
 	else if( rv == SOC_ERR){
 		close( proxy->fd);
 		free( proxy);
-		return NULL;
+		return SOC_ERR;
 	}
 
 	proxy->jpool = jpool_init( THREAD_NUM);
 	if( proxy->jpool == NULL){
 		close( proxy->fd);
 		free( proxy);
-		return NULL;
+		return OBJECT_ERR;
 	}
 
 	proxy->dst_fd = proxy_open_dst( proxy);
@@ -720,14 +695,14 @@ proxy_t* proxy_init( char **argv){
 		printf("	| ! Proxy : dst host fd error (%d)\n", proxy->dst_fd);
 		close ( proxy->fd);
 		free( proxy);
-		return NULL;
+		return FD_ERR;
 	}
 	else{
 		printf("	| @ Proxy : Success to connect with dst host (fd:%d)\n", proxy->dst_fd);
 
 		if( ( proxy->epoll_handle_fd = epoll_create( BUF_MAX_LEN)) < 0){
 			printf("    | ! Proxy : Fail to create epoll handle fd\n");
-			return ;
+			return FD_ERR;
 		}
 
 		struct epoll_event dst_event;
@@ -735,14 +710,45 @@ proxy_t* proxy_init( char **argv){
 		dst_event.data.fd = proxy->dst_fd;
 		if( ( epoll_ctl( proxy->epoll_handle_fd, EPOLL_CTL_ADD, proxy->dst_fd, &dst_event)) < 0){
 			printf("    | ! Proxy : Fail to add epoll dst_event\n");
-			return ;
+			return OBJECT_ERR;
 		}
 	}
 
 
 	printf("	| @ Proxy : Success to create a object\n");
 	printf("	| @ Proxy : Welcome\n\n");
-	return proxy;
+	return NORMAL;
+}
+
+/**
+ * @fn void proxy_final( proxy_t *proxy)
+ * @brief Proxy 객체 데이터를 삭제하기 위한 함수
+ * @return void
+ * @param proxy 데이터를 삭제하기 위한 Proxy 객체
+ */
+void proxy_final( proxy_t *proxy){
+    if( proxy->local_ip){
+        free( proxy->local_ip);
+    }
+
+    if( proxy->dst_ip){
+        free( proxy->dst_ip);
+    }
+
+    if( proxy_check_fd( proxy->fd) != FD_ERR){
+        close( proxy->fd);
+    }
+
+    if( proxy_check_fd( proxy->dst_fd) != FD_ERR){
+        close( proxy->dst_fd);
+    }
+
+    dlist_int_destroy( proxy->fd_list);
+    dlist_ptr_destroy( proxy->work_list);
+
+    jpool_destroy( proxy->jpool);
+
+    printf("    | @ Proxy : Success to final the object\n");
 }
 
 /**
@@ -752,26 +758,8 @@ proxy_t* proxy_init( char **argv){
  * @param proxy 삭제하기 위한 Proxy 객체
  */
 void proxy_destroy( proxy_t *proxy){
-	if( proxy->local_ip){
-		free( proxy->local_ip);
-	}
-
-	if( proxy->dst_ip){
-		free( proxy->dst_ip);
-	}
-
-	if( proxy_check_fd( proxy->fd) != FD_ERR){
-		close( proxy->fd);
-	}
-
-	if( proxy_check_fd( proxy->dst_fd) != FD_ERR){
-		close( proxy->dst_fd);
-	}
-
-	dlist_int_destroy( proxy->fd_list);
-	dlist_ptr_destroy( proxy->work_list);
-
-	jpool_destroy( proxy->jpool);
+    proxy_final( proxy);
+    if( proxy == proxy_instance()) return;
 	free( proxy);
 	printf("	| @ Proxy : Success to destroy the object\n");
 	printf("	| @ Proxy : BYE\n\n");
@@ -803,46 +791,6 @@ void proxy_handle_req( proxy_t *proxy){
 		rv = proxy_add_work_data( proxy);
 		if( rv < NORMAL){
 			break;
-		}
-	}
-}
-
-// -----------------------------------------
-
-/**
- * @fn int main( int argc, char **argv)
- * @brief Proxy 구동을 위한 main 함수
- * @return int
- * @param argc 매개변수 개수
- * @param argv ip 와 포트 정보
- */
-int main( int argc, char **argv){
-	if( argc != 5){
-		printf("	| ! need param (total 4) : [local ip] [local port] [host ip] [host port]\n");
-		return -1;
-	}
-
-	proxy_t *proxy = proxy_init( argv);
-	if( proxy == NULL){
-		printf("	| ! Proxy : Fail to initialize\n");
-		return -1;
-	}
-	proxy_handle_req( proxy);
-	if( is_finish == false){
-		printf("	| @ Proxy : Please press <ctrl+c> to exit\n");
-		is_error = true;
-		while( 1){
-			if( is_finish == true){
-				break;
-			}
-		}
-		proxy_destroy( proxy);
-	}
-	else{
-		while( 1){
-			if( is_error == true){
-				break;
-			}
 		}
 	}
 }

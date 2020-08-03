@@ -7,8 +7,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include "transc.h"
-#include "pipe.h"
+#include "transc_l.h"
+#include "pipe_l.h"
 
 typedef void ( *func_pointer) ( void *arg);
 

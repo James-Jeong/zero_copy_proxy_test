@@ -12,11 +12,11 @@
 #include <signal.h>
 #include <netdb.h>
 
-#include "common.h"
-#include "jpool.h"
-#include "transc.h"
-#include "dlist_int.h"
-#include "dlist_ptr.h"
+#include "common_l.h"
+#include "jpool_l.h"
+#include "transc_l.h"
+#include "dlist_int_l.h"
+#include "dlist_ptr_l.h"
 
 #define MSG_QUEUE_NUM 10
 #define TIMEOUT 10000
@@ -57,7 +57,9 @@ struct proxy_s{
 };
 
 
-proxy_t* proxy_init( char **argv);
+proxy_t* proxy_create( char **argv);
+int proxy_init( proxy_t *proxy, char **argv);
+void proxy_final( proxy_t *proxy);
 void proxy_destroy( proxy_t *proxy);
 void proxy_handle_req( proxy_t *proxy);
 

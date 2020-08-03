@@ -2,8 +2,8 @@
 #ifndef __DLIST_PTR_H__
 #define __DLIST_PTR_H__
 
-#include "common.h"
-#include "jpool.h"
+#include "common_l.h"
+#include "jpool_l.h"
 
 #define NODE_MAX_SIZE 1000
 #define LIST_MAX_SIZE 1024

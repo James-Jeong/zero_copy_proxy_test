@@ -1,4 +1,4 @@
-#include "jpool.h"
+#include "local/jpool_l.h"
 
 /**
  * @fn static jpool_work_t *jpool_work_init( func_pointer func, void *arg)

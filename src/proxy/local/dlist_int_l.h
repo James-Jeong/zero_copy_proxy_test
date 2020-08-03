@@ -2,7 +2,7 @@
 #ifndef __DLIST_INT_H__
 #define __DLIST_INT_H__
 
-#include "common.h"
+#include "common_l.h"
 
 #define LIST_MAX_LEN 1024
 

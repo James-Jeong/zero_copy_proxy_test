@@ -1,4 +1,4 @@
-#include "dlist_int.h"
+#include "local/dlist_int_l.h"
 
 dlist_int_t* dlist_int_create(){
 	dlist_int_t *list = ( dlist_int_t*)malloc( sizeof( dlist_int_t));
