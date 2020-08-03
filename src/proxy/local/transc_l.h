@@ -10,7 +10,6 @@
 #define MSG_HEADER_LEN 20
 #define BUF_MAX_LEN 1024
 
-typedef unsigned char byte;
 
 /// @struct transc_t
 /// @brief proxy 에서 thread 별 user buffer 관리를 위한 구조체

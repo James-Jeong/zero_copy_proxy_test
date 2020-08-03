@@ -176,7 +176,7 @@ static int proxy_recv_data( transc_t *transc, pipe_t *_pipe, int fd, int endian)
 	}
 
 	if( ( transc->is_recv_header == 1) && ( transc->is_recv_body == 1)){
-		printf("        | @ Proxy : Recv the msg (bytes : %d) (fd : %d)\n", transc->recv_bytes, fd);
+		//printf("        | @ Proxy : Recv the msg (bytes : %d) (fd : %d)\n", transc->recv_bytes, fd);
 	}
 
 	//printf("        | ! Proxy : Fail to recv the msg (fd : %d)\n", fd);
@@ -267,7 +267,7 @@ static int proxy_send_data( transc_t *transc, pipe_t *_pipe, int fd){
 	}
 
 	if( ( transc->is_send_header == 1) && ( transc->is_send_body == 1)){
-		printf("        | @ Proxy : Send the msg (bytes : %d) (fd : %d)\n", transc->send_bytes, fd);
+		//printf("        | @ Proxy : Send the msg (bytes : %d) (fd : %d)\n", transc->send_bytes, fd);
 	}
 
 	//printf("        | ! Proxy : Fail to send the msg (fd : %d)\n", fd);
@@ -282,7 +282,6 @@ static int proxy_send_data( transc_t *transc, pipe_t *_pipe, int fd){
  * @param event 발생한 event
  */
 static void proxy_process_data( int fd, void *data){
-	int endian;
 	int read_rv = NORMAL;
 	int send_rv = NORMAL;
 	int src_fd = ( int)( ( ( jpool_work_data_t*)( data))->src_fd);
@@ -295,13 +294,11 @@ static void proxy_process_data( int fd, void *data){
 	// fd 가 destination 이면 source 로 포워딩되로록 설정
 	// 파이프는 dst->src 용 파이프로 설정
 	if( fd == dst_fd){
-		endian = 0;
 		dst_fd = src_fd;
 		_pipe = ( pipe_t*)( ( ( jpool_work_data_t*)( data))->_pipe2);
 		transc = outgoing_transc;
 	}
 	else{
-		endian = 0;
 		_pipe = ( pipe_t*)( ( ( jpool_work_data_t*)( data))->_pipe1);
 		transc = ingoing_transc;
 	}
@@ -314,7 +311,7 @@ static void proxy_process_data( int fd, void *data){
 	// 4. 프록시에서 읽은 응답 메시지를 src 로 포워딩함
 
 	if( ( transc->is_recv_header == 0) || ( transc->is_recv_body == 0)){
-		read_rv = proxy_recv_data( transc, _pipe, fd, endian);
+		read_rv = proxy_recv_data( transc, _pipe, fd, ENDIAN);
 		if( read_rv <= ZERO_BYTE){
 			//			if( fd == src_fd){
 			printf("	| ! Proxy : socket closed (fd:%d)\n\n", fd);
@@ -650,10 +647,12 @@ proxy_t* proxy_create( char **argv){
     int rv;
     proxy_t *proxy = proxy_instance();
     rv = proxy_init( proxy, argv);
-    if( rv){
+    if( rv < NORMAL){
         printf("    | ! Proxy : Fail to create proxy object\n");
         return NULL;
     }
+
+	return proxy;
 }
 
 /**
@@ -768,11 +767,11 @@ void proxy_destroy( proxy_t *proxy){
 /**
  * @fn void proxy_handle_req( proxy_t *proxy)
  * @brief Proxy 로 수신되는 요청을 처리하기 위한 함수
- * @return void
+ * @return 데이터 처리 오류 여부
  * @param proxy 데이터 처리를 위한 Proxy 객체
  */
-void proxy_handle_req( proxy_t *proxy){
-	int rv;
+int proxy_handle_req( proxy_t *proxy){
+	int rv = NORMAL;
 	int working_cnt;
 
 	while( 1){
@@ -793,5 +792,7 @@ void proxy_handle_req( proxy_t *proxy){
 			break;
 		}
 	}
+
+	return rv;
 }
 

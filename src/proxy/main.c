@@ -8,6 +8,8 @@
  * @param argv ip 와 포트 정보
  */
 int main( int argc, char **argv){
+	int rv;
+
 	if( argc != 5){
 		printf("	| ! need param (total 4) : [local ip] [local port] [host ip] [host port]\n");
 		return -1;
@@ -18,6 +20,10 @@ int main( int argc, char **argv){
 		printf("	| ! Proxy : Fail to initialize\n");
 		return -1;
 	}
-	proxy_handle_req( proxy);
+	
+	rv = proxy_handle_req( proxy);
+	if( rv != SOC_ERR){
+		proxy_final( proxy);
+	}
 }
 

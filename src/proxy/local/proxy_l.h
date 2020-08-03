@@ -21,6 +21,7 @@
 #define MSG_QUEUE_NUM 10
 #define TIMEOUT 10000
 #define THREAD_NUM 2
+#define ENDIAN 1
 
 #define SPLICE_F_MOVE 0x01
 #define SPLICE_F_NONBLOCK 0x02
@@ -61,7 +62,7 @@ proxy_t* proxy_create( char **argv);
 int proxy_init( proxy_t *proxy, char **argv);
 void proxy_final( proxy_t *proxy);
 void proxy_destroy( proxy_t *proxy);
-void proxy_handle_req( proxy_t *proxy);
+int proxy_handle_req( proxy_t *proxy);
 
 #endif
 
