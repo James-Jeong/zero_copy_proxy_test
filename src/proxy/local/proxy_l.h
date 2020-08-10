@@ -57,8 +57,7 @@ struct proxy_s{
 	dlist_ptr_t work_list [ 1];
 };
 
-
-proxy_t* proxy_create( char **argv);
+proxy_t* proxy_instance( char **argv);
 int proxy_init( proxy_t *proxy, char **argv);
 void proxy_final( proxy_t *proxy);
 void proxy_destroy( proxy_t *proxy);

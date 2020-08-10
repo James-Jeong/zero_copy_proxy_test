@@ -3,14 +3,32 @@
 ///////////////////////////////////////////////////////////////////
 // STATIC Function for proxy_t
 ///////////////////////////////////////////////////////////////////
-static proxy_t* proxy_instance(){
-	static proxy_t _singleton;
 
-	return &_singleton;
+/**
+ * @fn static proxy_t* proxy_create( char **argv)
+ * @brief Proxy 객체를 생성하는 함수
+ * @return 생성된 Proxy 객체
+ */
+static proxy_t* proxy_create( char **argv){
+	int rv;
+
+	proxy_t *proxy = ( proxy_t*)malloc( sizeof( proxy_t));
+	if ( proxy == NULL){
+		printf("    | ! Proxy : Fail to allocate memory\n");
+		return NULL;
+	}
+
+	rv = proxy_init( proxy, argv);
+    if( rv < NORMAL){
+        printf("    | ! Proxy : Fail to create proxy object\n");
+        return NULL;
+    }
+
+	return proxy;
 }
 
 static void _proxy_exit_program( int sig){
-	proxy_t *proxy = proxy_instance();
+	proxy_t *proxy = proxy_instance( NULL);
 
 	printf("    | @ Proxy : (fd:%d)\n", proxy->fd);
 	printf("    | @ Proxy : (dst fd:%d)\n", proxy->dst_fd);
@@ -19,7 +37,6 @@ static void _proxy_exit_program( int sig){
 	printf("    | ! Proxy : proxy will be finished (sig:%d)\n", sig);
 
 	proxy_final( proxy);
-
 	signal( sig, SIG_DFL);
 }
 
@@ -633,26 +650,17 @@ static int proxy_add_work_data( proxy_t *proxy){
 ///////////////////////////////////////////////////////////////////
 
 /**
- * @fn proxy_t* proxy_create( char **argv)
- * @brief Proxy 객체를 생성하는 함수
+ * @fn proxy_t* proxy_instance( char **argv)
+ * @brief Proxy singleton instance를 생성하는 함수
  * @return 생성된 Proxy 객체
  */
-proxy_t* proxy_create( char **argv){
-//  proxy_t *proxy = ( proxy_t*)malloc( sizeof( proxy_t));
-//  if ( proxy == NULL){
-//      printf("    | ! Proxy : Fail to allocate memory\n");
-//      return NULL;
-//  }
+proxy_t* proxy_instance( char **argv){
+	static proxy_t *_singleton = NULL;
+	if( _singleton == NULL){
+		_singleton = proxy_create( argv);
+	}
 
-    int rv;
-    proxy_t *proxy = proxy_instance();
-    rv = proxy_init( proxy, argv);
-    if( rv < NORMAL){
-        printf("    | ! Proxy : Fail to create proxy object\n");
-        return NULL;
-    }
-
-	return proxy;
+	return _singleton;
 }
 
 /**
@@ -726,21 +734,11 @@ int proxy_init( proxy_t *proxy, char **argv){
  * @param proxy 데이터를 삭제하기 위한 Proxy 객체
  */
 void proxy_final( proxy_t *proxy){
-    if( proxy->local_ip){
-        free( proxy->local_ip);
-    }
+    if( proxy->local_ip) free( proxy->local_ip);
+    if( proxy->dst_ip) free( proxy->dst_ip);
 
-    if( proxy->dst_ip){
-        free( proxy->dst_ip);
-    }
-
-    if( proxy_check_fd( proxy->fd) != FD_ERR){
-        close( proxy->fd);
-    }
-
-    if( proxy_check_fd( proxy->dst_fd) != FD_ERR){
-        close( proxy->dst_fd);
-    }
+    if( proxy_check_fd( proxy->fd) != FD_ERR) close( proxy->fd);
+    if( proxy_check_fd( proxy->dst_fd) != FD_ERR) close( proxy->dst_fd);
 
     dlist_int_destroy( proxy->fd_list);
     dlist_ptr_destroy( proxy->work_list);
@@ -758,7 +756,6 @@ void proxy_final( proxy_t *proxy){
  */
 void proxy_destroy( proxy_t *proxy){
     proxy_final( proxy);
-    if( proxy == proxy_instance()) return;
 	free( proxy);
 	printf("	| @ Proxy : Success to destroy the object\n");
 	printf("	| @ Proxy : BYE\n\n");

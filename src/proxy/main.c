@@ -15,7 +15,7 @@ int main( int argc, char **argv){
 		return -1;
 	}
 
-	proxy_t *proxy = proxy_create( argv);
+	proxy_t *proxy = proxy_instance( argv);
 	if( proxy == NULL){
 		printf("	| ! Proxy : Fail to initialize\n");
 		return -1;
