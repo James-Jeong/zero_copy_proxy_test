@@ -6,12 +6,12 @@
 #include <pthread.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include "dlist_ptr_l.h"
 
 ///////////////////////////////////////////////////
 // typedef & macros for jevtmgr
 ///////////////////////////////////////////////////
-
-#define BUF_MAX_LEN 1024
+#define MAX_LEN 1024
 
 typedef int (*jevtmgr_handle_wakeup_f)(jevtmgr_t *evtmgr, int nwakeup);
 typedef int (*jevtmgr_handle_event_f)(jevtmgr_t *evtmgr, jevent_t *event);
@@ -20,7 +20,6 @@ typedef int (*jevtmgr_notify_f)(jevtmgr_t *evtmgr, void *data);
 ///////////////////////////////////////////////////
 // struct for jevtmgr
 ///////////////////////////////////////////////////
-
 /// @struct jnoti_t
 /// @brief evtmgr 에서 사용하는 notify 구조체
 typedef struct jnoti_s jnoti_t;
@@ -49,16 +48,29 @@ typedef struct jevtmgr_s jevtmgr_t;
 struct jevtmgr_s{
 	int is_alive; /**< event manager 동작 여부 */
 	int timeout; /**< event manager 에서 event 를 기다리기 위한 시간 */
+	int event_count; /**< event count */
+	dlist_ptr_t *events; /**< event list */
 	int epoll_handle_fd; /**< event manager 에서 사용하는 epoll handle fd */
-	struct epoll_event events[ BUF_MAX_LEN]; /**< epoll handle fd 에서 깨어난 events */
+	struct epoll_event events[ MAX_LEN]; /**< epoll handle fd 에서 깨어난 events */
 	void *user_data; /**< 사용자 데이터 */
 	jevtmgr_handle_wakeup_f handle_wakeup; /**< event 가 깨어났을 때 호출되는 callback function */
 };
 
 ///////////////////////////////////////////////////
+// local functions for jevent
+///////////////////////////////////////////////////
+jevent_t *jevent_create( size_t num);
+int jevent_init( jevent_t *event);
+void jevent_final( jevent_t *event);
+void jevent_destroy( jevent_t *event);
+
+int jevent_run( jevent_t *event);
+int jevent_start( jevent_t *event);
+int jevent_stop( jevent_t *event);
+
+///////////////////////////////////////////////////
 // local functions for jevtmgr
 ///////////////////////////////////////////////////
-
 jevtmgr_t *jevtmgr_create( size_t num);
 int jevtmgr_init( jevtmgr_t *evtmgr);
 void jevtmgr_final( jevtmgr_t *evtmgr);

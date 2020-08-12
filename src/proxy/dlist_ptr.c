@@ -73,9 +73,8 @@ void dlist_ptr_init( dlist_ptr_t *list){
 	list->length = 0;
 }
 
-
-void dlist_ptr_destroy( dlist_ptr_t *list){
-	if( list){
+void dlist_ptr_final( dlist_ptr_t *list){
+	if( list && list->length > 0){
 		node_ptr_t *index_node = list->head;
 		if( index_node->next != list->tail){
 			if( index_node->next != NULL){
@@ -85,8 +84,12 @@ void dlist_ptr_destroy( dlist_ptr_t *list){
 				}
 			}
 		}
-//		free( list);
 	}
+}
+
+void dlist_ptr_destroy( dlist_ptr_t *list){
+	dlist_ptr_final( list);
+	free( list);
 }
 
 int dlist_ptr_add_node( dlist_ptr_t *list, void *data){
@@ -124,8 +127,6 @@ int dlist_ptr_add_node( dlist_ptr_t *list, void *data){
 int dlist_ptr_del_node_by_node( dlist_ptr_t *list, node_ptr_t *target){
 	node_ptr_t *head = list->head;
 	node_ptr_t *tail = list->tail;
-	int index_src_fd;
-	int src_fd = ( int)( ( jpool_work_data_t*)( target->data))->src_fd;
 
 	if( list->head->next == NULL){
 		printf("		| ! List : Not found node in list\n");
@@ -136,11 +137,7 @@ int dlist_ptr_del_node_by_node( dlist_ptr_t *list, node_ptr_t *target){
 	node_ptr_t *index_node = list->head->next;
 
 	while( index_node != tail){
-		index_src_fd = ( int)( ( jpool_work_data_t*)( index_node->data))->src_fd;
-		printf("		| @ List : index_node->src_fd : %d\n", index_src_fd);
-		printf("		| @ List : src_fd : %d\n", src_fd);
-		if( index_node == target){
-			printf("	| @ List : find node src_fd : %d\n", index_src_fd);
+		if( memcmp( index_node, target, sizeof( target))){
 			index_node->prev->next = index_node->next;
 			index_node->next->prev = index_node->prev;
 			node_ptr_destroy( index_node);
@@ -154,11 +151,9 @@ int dlist_ptr_del_node_by_node( dlist_ptr_t *list, node_ptr_t *target){
 	return OBJECT_ERR;
 }
 
-int dlist_ptr_del_node_by_data( dlist_ptr_t *list, void *data){
+int dlist_ptr_del_node_by_data( dlist_ptr_t *list, void *data, size_t num){
 	node_ptr_t *head = list->head;
 	node_ptr_t *tail = list->tail;
-	int index_src_fd;
-	int src_fd = ( int)( ( jpool_work_data_t*)( data))->src_fd;
 
 	if( list->head->next == NULL){
 		printf("		| ! List : Not found node in list\n");
@@ -167,13 +162,8 @@ int dlist_ptr_del_node_by_data( dlist_ptr_t *list, void *data){
 	}
 
 	node_ptr_t *index_node = list->head->next;
-
 	while( index_node != tail){
-		index_src_fd = ( int)( ( jpool_work_data_t*)( index_node->data))->src_fd;
-		printf("		| @ List index_node->src_fd : %d\n", index_src_fd);
-		printf("		| @ List src_fd : %d\n", src_fd);
-		if( src_fd == index_src_fd){
-			printf("		| @ List find node src_fd : %d\n", index_src_fd);
+		if( memcmp( data, list->node->data, num) == 0){
 			index_node->prev->next = index_node->next;
 			index_node->next->prev = index_node->prev;
 			node_ptr_destroy( index_node);

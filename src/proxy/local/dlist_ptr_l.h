@@ -38,10 +38,11 @@ struct dlist_ptr_s{
 
 dlist_ptr_t* dlist_ptr_create();
 void dlist_ptr_init( dlist_ptr_t *list);
+void dlist_ptr_final( dlist_ptr_t *list);
 void dlist_ptr_destroy( dlist_ptr_t *list);
 int dlist_ptr_add_node( dlist_ptr_t *list, void *data);
 int dlist_ptr_del_node_by_node( dlist_ptr_t *list, node_ptr_t *target);
-int dlist_ptr_del_node_by_data( dlist_ptr_t *list, void *data);
+int dlist_ptr_del_node_by_data( dlist_ptr_t *list, void *data, size_t num);
 node_ptr_t* dlist_ptr_find_node_by_node( dlist_ptr_t *list, node_ptr_t *target);
 void* dlist_ptr_find_node_data_by_node( dlist_ptr_t *list, node_ptr_t *target);
 void* dlist_ptr_find_node_data_by_data( dlist_ptr_t *list, void *data);

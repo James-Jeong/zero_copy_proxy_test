@@ -517,7 +517,7 @@ static int proxy_set_sock( proxy_t *proxy){
 static int proxy_delete_src_info( proxy_t *proxy, int src_fd){
 	int rv;
 
-	rv = dlist_int_del_node_by_data( proxy->fd_list, src_fd);
+	rv = dlist_int_del_node_by_data( proxy->fd_list, src_fd, sizeof( src_fd));
 	if( rv < NORMAL){
 		printf("	| ! Proxy : Fail to delete the source fd(%d) in proxy fd_list\n", src_fd);
 		return rv;
